@@ -4,10 +4,18 @@ Chain Calculator
 
 A simple chain calculator for the command line.
 
-Features
---------
+Examples::
 
-* TODO
+    $ chain_calc 4 plus 1 minus 2 times 3 by 9
+    1
+
+    $ chain_calc -v 4 plus 1 minus 2 times 3 by 9
+    4 + 1 = 5
+    5 - 2 = 3
+    3 * 3 = 9
+    9 / 9 = 1
+    1
+
 
 Credits
 -------
