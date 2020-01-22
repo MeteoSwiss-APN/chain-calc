@@ -1,38 +1,35 @@
 # -*- coding: utf-8 -*-
 """Console script for chain_calc."""
-import logging
 import sys
 
 import click
 
 from . import __version__
-from .utils import count_to_log_level
-
-
-def print_help(ctx, param, value):
-    if value:
-        click.echo(ctx.get_help())
-        if param is None:
-            ctx.exit(1)
-        ctx.exit(0)
+from .mutable_number import MutableNumber
 
 
 def print_version(ctx, param, value):
+    """Print the version number and exit."""
     if value:
         click.echo(__version__)
         ctx.exit(0)
 
 
-@click.command()
-@click.argument("number", metavar="NUMBER", nargs=-1)
-@click.option(
-    "--help",
-    "-h",
-    help="Show this message and exit.",
-    is_flag=True,
-    expose_value=False,
-    callback=print_help,
+@click.pass_context
+def print_number(ctx, *args, **kwargs):
+    """Print the current number."""
+    number = ctx.obj["number"].get()
+    click.echo(f"{number:g}")
+
+
+@click.group(
+    context_settings={"help_option_names": ["-h", "--help"]},
+    no_args_is_help=True,
+    invoke_without_command=True,
+    chain=True,
+    result_callback=print_number,
 )
+@click.argument("number", type=float, nargs=1)
 @click.option(
     "--version",
     "-V",
@@ -42,40 +39,56 @@ def print_version(ctx, param, value):
     callback=print_version,
 )
 @click.option(
-    "--dry-run",
-    "-n",
-    flag_value="dry_run",
-    default=False,
-    help="Perform a trial run with no changes made.",
-)
-@click.option(
     "--verbose",
     "-v",
     count=True,
     help="Increase verbosity (specify multiple times for more).",
 )
 @click.pass_context
-def main(ctx, number, dry_run, verbose):
+def main(ctx, number, **kwargs):
     """Console script for test_cli_project."""
+    if ctx.obj is None:
+        ctx.obj = {}
+    ctx.obj["number"] = MutableNumber(number)
+    ctx.obj.update(kwargs)
 
-    if dry_run:
-        click.echo("This is merely a dry run")
-        return 0
 
-    if len(number) == 1:
-        number = next(iter(number))
-        click.echo(number)
-    else:
-        if len(number) > 1:
-            click.echo(f"Error: expecting 1 number, got {len(number)}")
-        print_help(ctx, None, True)
+def print_operation(ctx, operator, value):
+    if ctx.obj["verbose"]:
+        number = ctx.obj["number"]
+        click.echo(f"{number.get(-2):g} {operator} {value:g} = {number.get():g}")
 
-    logging.basicConfig(level=count_to_log_level(verbose))
-    logging.warning("This is a warning.")
-    logging.info("This is an info message.")
-    logging.debug("This is a debug message.")
 
-    return 0
+@main.command("plus", help="addition")
+@click.argument("addend", type=float, nargs=1)
+@click.pass_context
+def plus(ctx, addend):
+    ctx.obj["number"].add(addend)
+    print_operation(ctx, "+", addend)
+
+
+@main.command("minus", help="subtraction")
+@click.argument("subtrahend", type=float, nargs=1)
+@click.pass_context
+def minus(ctx, subtrahend):
+    ctx.obj["number"].subtract(subtrahend)
+    print_operation(ctx, "-", subtrahend)
+
+
+@main.command("times", help="multiplication")
+@click.argument("factor", type=float, nargs=1)
+@click.pass_context
+def times(ctx, factor):
+    ctx.obj["number"].multiply(factor)
+    print_operation(ctx, "*", factor)
+
+
+@main.command("by", help="division")
+@click.argument("divisor", type=float, nargs=1)
+@click.pass_context
+def by(ctx, divisor):
+    ctx.obj["number"].divide(divisor)
+    print_operation(ctx, "/", divisor)
 
 
 if __name__ == "__main__":
