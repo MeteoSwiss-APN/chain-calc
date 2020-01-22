@@ -1,0 +1,14 @@
+-e . # this package in editable mode
+black
+bumpversion
+coverage
+flake8
+flake8-isort
+isort
+# pluggy
+pytest
+# sphinx
+tox
+# twine
+# watchdog
+# wheel
